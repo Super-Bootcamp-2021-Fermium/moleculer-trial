@@ -4,16 +4,16 @@ const DbService = require("moleculer-db");
 
 const brokerNode1 = new ServiceBroker({
   namespace: "dev",
-  nodeID: "node-3",
+  nodeID: "logger-gateway",
   transporter: "NATS",
 });
 
 brokerNode1.createService({
-  name: "gateway2",
+  name: "loggerGateway",
   mixins: [HTTPServer],
 
   settings: {
-    port: process.env.PORT || 3001,
+    port: process.env.PORT || 3002,
     ip: "0.0.0.0",
     use: [],
     routes: [
@@ -29,7 +29,7 @@ brokerNode1.createService({
 
 const brokerNode2 = new ServiceBroker({
   namespace: "dev",
-  nodeID: "node-4",
+  nodeID: "logger",
   transporter: "NATS",
 });
 

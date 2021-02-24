@@ -4,25 +4,24 @@ const DbService = require("moleculer-db");
 
 const brokerNode1 = new ServiceBroker({
   namespace: "dev",
-  nodeID: "node-1",
+  nodeID: "transaction-gateway",
   transporter: "NATS",
 });
 
 brokerNode1.createService({
-  name: "gateway",
+  name: "transactionGateway",
   mixins: [HTTPServer],
 
   settings: {
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 3001,
     ip: "0.0.0.0",
     use: [],
     routes: [
       {
-        path: "/transaction",
+        path: "/",
         aliases: {
           "GET list": "transactions.list",
           "POST add": "transactions.add",
-          "DELETE del/:id": "transactions.del",
         },
       },
     ],
@@ -31,7 +30,7 @@ brokerNode1.createService({
 
 const brokerNode2 = new ServiceBroker({
   namespace: "dev",
-  nodeID: "node-2",
+  nodeID: "transaction",
   transporter: "NATS",
 });
 
@@ -50,19 +49,21 @@ brokerNode2.createService({
   actions: {
     list: {
       async handler(ctx) {
+        this.broker.call("logs.add", "get transaction list");
         return this.broker.call("transactions.find", {});
       },
     },
     add: {
       async handler(ctx) {
-        return this.broker.call("transactions.create", ctx.params);
+        const to = await this.broker.call("users.userInfo", ctx.params.to);
+        if (to) {
+          this.broker.call("logs.add", "add new transaction");
+          return this.broker.call("transactions.create", ctx.params);
+        } else {
+          return "user tidak ditemukan";
+        }
       },
     },
-    del: {
-        async handler(ctx) {
-          return this.broker.call("transactions.remove", { id: ctx.params.id });
-        },
-      },
   },
 
   afterConnected() {},
